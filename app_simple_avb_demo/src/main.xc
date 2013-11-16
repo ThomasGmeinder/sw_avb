@@ -191,27 +191,6 @@ media_input_fifo_t ififos[AVB_NUM_MEDIA_INPUTS];
 #if ENABLE_XSCOPE
 void xscope_user_init(void)
 {
-#if AVB_USE_XSCOPE_PROBES
-#if 0
-   xscope_register(4,
-                   XSCOPE_CONTINUOUS, "diff outgoing - prestentation time", XSCOPE_INT, "ns",
-                   XSCOPE_CONTINUOUS, "local timestamp audio interface", XSCOPE_UINT, "timestamp",
-                   XSCOPE_CONTINUOUS, "channel 0", XSCOPE_UINT, "samples",
-                   XSCOPE_CONTINUOUS, "1722 ptp timestamp Listener", XSCOPE_UINT, "timestamp"
-                   );
-#elif 0
-   // makes XScope hang in 0x00014e1e in xscope_constructor ()
-   xscope_register(5,
-                   XSCOPE_CONTINUOUS, "Clock Recovery diff", XSCOPE_INT, "ns",
-                   XSCOPE_CONTINUOUS, "local_timestamp", XSCOPE_UINT, "refclk_cycles",
-                   XSCOPE_CONTINUOUS, "channel_0", XSCOPE_UINT, "sample_value",
-                   XSCOPE_CONTINUOUS, "Listener 1722 ptp timestamp", XSCOPE_UINT, "refclk_cycles",
-                   XSCOPE_CONTINUOUS, "Talker ptp_ts delta", XSCOPE_UINT, "ns"
-                   );
-#else
-#if (AVB_TALKER_XSCOPE_PROBES && AVB_LISTENER_XSCOPE_PROBES)
-#error "Due to xscope bug, AVB_TALKER_XSCOPE_PROBES and AVB_LISTENER_XSCOPE_PROBES cannot coexist"
-#endif
 #if AVB_TALKER_XSCOPE_PROBES
    xscope_register(5,
            XSCOPE_CONTINUOUS, "ififo: overflow discarded timestamp", XSCOPE_UINT, "uint",
@@ -220,15 +199,16 @@ void xscope_user_init(void)
            XSCOPE_STARTSTOP, "T: to MAC",  XSCOPE_UINT, "Units",
            XSCOPE_STARTSTOP, "T: create pkt",  XSCOPE_UINT, "Units"
    );
-#endif
-#if AVB_LISTENER_XSCOPE_PROBES
+#elif AVB_LISTENER_XSCOPE_PROBES
    xscope_register(2,
 		   XSCOPE_CONTINUOUS, "Clock Recovery: diff", XSCOPE_INT, "ns",
 		   XSCOPE_CONTINUOUS, "Clock Recovery: wordlen", XSCOPE_UINT, "uint"
    );
-#endif
-
-#endif
+#elif AVB_TDM_XSCOPE_PROBES
+   xscope_register(2,
+           XSCOPE_CONTINUOUS, "ch0 sample out", XSCOPE_INT, "sample",
+           XSCOPE_CONTINUOUS, "ch0 sample in", XSCOPE_UINT, "sample"
+   );
 #else
    xscope_register_no_probes();
 #endif

@@ -13,6 +13,7 @@
 #include <xscope.h>
 #include "media_fifo.h"
 #include "simple_printf.h"
+#include "xscope.h"
 
 /**
  *  \brief Interface task between ififo/ofifo and an audio interface
@@ -21,6 +22,9 @@
  *  Where this task is essential to meet the timing
  *  by getting a subset of samples for each sub-slot
  */
+
+
+int channel_lut[16] = {6,7,0,1,2,3,4,5,14,15,8,9,10,11,12,13};
 
 void media_input_output_fifo_support_upto_16ch(streaming chanend samples_out,
 			streaming chanend c_samples_from_adc,
@@ -42,21 +46,27 @@ void media_input_output_fifo_support_upto_16ch(streaming chanend samples_out,
  		 for (int i=0;i<AVB_AUDIO_IF_SAMPLES_PER_PERIOD;i++) {
 		     unsigned sample;
  			 for(int j=0; j<AVB_NUM_AUDIO_SDATA_OUT; j++) {
-
- 				 sample = media_output_fifo_pull_sample(output_fifos[i+j*AVB_AUDIO_IF_SAMPLES_PER_PERIOD],
+                 int ofifo_idx = (i+j*AVB_AUDIO_IF_SAMPLES_PER_PERIOD);
+ 				 sample = media_output_fifo_pull_sample(output_fifos[ofifo_idx],
  						 timestamp);
  				 samples_out <: sample;
+ 				 if(ofifo_idx == 0) {
+ 				     //xscope_int(0, sext(24,sample));
+ 				 }
  			 }
  			 for(int j=0; j<AVB_NUM_AUDIO_SDATA_IN; j++) {
  				c_samples_from_adc :> sample;
- 				if(i==0) {
- 					//xscope_int(2, sample);
- 				}
 
- 				if (active_fifos & (1 << (i+j*AVB_AUDIO_IF_SAMPLES_PER_PERIOD))) {
- 					media_input_fifo_push_sample(input_fifos[i+j*AVB_AUDIO_IF_SAMPLES_PER_PERIOD], sample, timestamp);
+ 				int ififo_idx = (i+j*AVB_AUDIO_IF_SAMPLES_PER_PERIOD);
+                //hack: compensate for issue in TDM interface that causes shift in input channel offset ((Bug 1481)
+ 				ififo_idx = channel_lut[ififo_idx];
+ 				if(ififo_idx == 0) {
+                    //xscope_int(1, sext(24,sample));
+ 				}
+ 				if (active_fifos & (1 << (ififo_idx))) {
+ 					media_input_fifo_push_sample(input_fifos[ififo_idx], sample, timestamp);
  				} else {
- 					media_input_fifo_flush(input_fifos[i+j*AVB_AUDIO_IF_SAMPLES_PER_PERIOD]);
+ 					media_input_fifo_flush(input_fifos[ififo_idx]);
  				}
  			 }
  		 }

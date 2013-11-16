@@ -242,6 +242,67 @@ static void _xports_i2s__resync( xports_i2s__context_t& self )
 }
 
 // --------------------------------------------------------------------------------------------------------------------
+
+// Resynchronize the I/O ports after a MCLK frequency or sample rate change
+
+// --------------------------------------------------------------------------------------------------------------------
+
+static void _xports_i2s__synchronize( xports_i2s__context_t& self )
+{
+
+    unsigned int ticks = 16;
+
+    #if XPORTS_I2S__DATA_LOOPBACK_MODE == XPORTS_I2S__DATA_LOOPBACK_MODE__OFF && XPORTS_I2S__DAC_DATA_WIRE_COUNT > 0
+
+    for( int i = 0; i < XPORTS_I2S__DAC_DATA_WIRE_COUNT; ++i ) clearbuf( self.pin_dac[i] );
+
+    #endif
+
+    #if XPORTS_I2S__DATA_LOOPBACK_MODE == XPORTS_I2S__DATA_LOOPBACK_MODE__OFF && XPORTS_I2S__ADC_DATA_WIRE_COUNT > 0
+
+    for( int i = 0; i < XPORTS_I2S__ADC_DATA_WIRE_COUNT; ++i ) clearbuf( self.pin_adc[i] );
+
+    #endif
+
+    clearbuf( self.pin_wclk );
+    clearbuf( self.pin_bclk );
+
+
+    if( self.mclk_bclk_ratio == 1 ) ticks = 200;
+
+    self.pin_wclk @ ticks <: 0xFFFFFFFF;
+
+    #pragma loop unroll
+
+    #if XPORTS_I2S__DATA_LOOPBACK_MODE == XPORTS_I2S__DATA_LOOPBACK_MODE__OFF && XPORTS_I2S__DAC_DATA_WIRE_COUNT > 0
+
+    for( int i = 0; i < XPORTS_I2S__DAC_DATA_WIRE_COUNT; ++i ) self.pin_dac[i] @ ticks <: 0xFFFFFFFF;
+
+    #endif
+
+    #if XPORTS_I2S__DATA_LOOPBACK_MODE == XPORTS_I2S__DATA_LOOPBACK_MODE__OFF && XPORTS_I2S__ADC_DATA_WIRE_COUNT > 0
+
+    #pragma loop unroll
+
+    // Physical Target ...
+
+    for( int i = 0; i < XPORTS_I2S__ADC_DATA_WIRE_COUNT; ++i ) asm("setpt res[%0], %1"::"r"(self.pin_adc[i]),"r"(ticks-0));
+
+    // When sumlating ...
+
+    //for( int i = 0; i < XPORTS_I2S__ADC_DATA_WIRE_COUNT; ++i ) asm("setpt res[%0], %1"::"r"(_xports_i2s__pin_adc[i]),"r"(ticks-1));
+
+    #endif
+
+    start_clock( self.clock_bclk );
+
+    _xports_i2s__output_bclk( self );
+
+    _xports_i2s__output_bclk( self );
+
+}
+
+// --------------------------------------------------------------------------------------------------------------------
 // Pack sample data into buffer for DAC output
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -1007,7 +1068,8 @@ void xports_i2s__transfer( xports_i2s__context_t& self, unsigned int dac_samples
 	if( self.first_pass )
 	{
 		self.first_pass = 0;
-		_xports_i2s__resync( self );
+		//_xports_i2s__resync( self );
+        _xports_i2s__synchronize( self );
 	}
 
 	#pragma xta endpoint "xports_i2s__transfer:beg"
