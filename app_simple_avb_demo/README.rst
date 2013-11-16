@@ -15,7 +15,7 @@ Note: See Makefile for details on the naming convention.
 Between two XMOS EPs
 --------------------
 Test Instructions:
-***********
+******************
    - Two XMOS Single-port EPs connected via a switch.
    - The Mac running UNOS is also connected to the Switch. UNOS is used to connect streams.
 
@@ -29,11 +29,15 @@ Results:
 On the Mac:
 -----------
 Test/Demo Instructions:
-***********
-   - Single XMOS EP connected to a Mac running Maverics
-   - For TDM loopback: 
+***********************
+   - The demo shows: 
+       * XMOS EP enumerated on Mac Maverics as: XMOS AVB Endpoint 16 in / 16 out
+       * 2 x 8 channel TDM loopback
+   - For TDM loopback modify the XMOS AVB Endpoint like this: 
        * Using Jumper Wires, connect SDATA_OUT0 to SDATA_IN0 and SDATA_OUT1 to SDATA_IN1
        * Remove jumper J12 to disconnect ADC from SDATA_IN0
+   - Connect XMOS EP to a Mac running Maverics. Select “XMOS AVB Endpoint” in the Network Device Browser
+     Note: Now the Audio Devices Window should show a new device: XMOS AVB Endpoint 16 in/ 16 out
    - Use Audacity to output audio to the EP (limit is two) and record 16 channels from the EP
        * Generate a tone at 48kHz sampling rate for 60 seconds.
        * Set both the Output and Input to XMOS AVB Endpoint
