@@ -758,16 +758,16 @@ static inline void _xports_i2s__transfer_chan( xports_i2s__context_t& self, stre
 	#endif
 
 	#if XPORTS_I2S__DAC_DATA_WIRE_COUNT >= 1
-	c_dac_samples :> values[0]; self.pin_dac[0] <: values[0];
+	c_dac_samples :> values[0]; self.pin_dac[0] <: bitrev(values[0]);
 	#endif
 	#if XPORTS_I2S__DAC_DATA_WIRE_COUNT >= 2
-	c_dac_samples :> values[1]; self.pin_dac[1] <: values[1];
+	c_dac_samples :> values[1]; self.pin_dac[1] <: bitrev(values[1]);
 	#endif
 	#if XPORTS_I2S__DAC_DATA_WIRE_COUNT >= 3
-	c_dac_samples :> values[2]; self.pin_dac[2] <: values[2];
+	c_dac_samples :> values[2]; self.pin_dac[2] <: bitrev(values[2]);
 	#endif
 	#if XPORTS_I2S__DAC_DATA_WIRE_COUNT >= 4
-	c_dac_samples :> values[3]; self.pin_dac[3] <: values[3];
+	c_dac_samples :> values[3]; self.pin_dac[3] <: bitrev(values[3]);
 	#endif
 
 	#if XPORTS_I2S__BUS_CLOCKING_MODE == XPORTS_I2S__BUS_CLOCKING_MODE__MASTER
@@ -780,7 +780,7 @@ static inline void _xports_i2s__transfer_chan( xports_i2s__context_t& self, stre
     #else
 	self.pin_adc[0] :> values[0];
 	#endif
-	c_adc_samples <: values[0];
+	c_adc_samples <: bitrev(values[0]);
 	#endif
 
 	#if XPORTS_I2S__ADC_DATA_WIRE_COUNT >= 2
@@ -789,7 +789,7 @@ static inline void _xports_i2s__transfer_chan( xports_i2s__context_t& self, stre
     #else
 	self.pin_adc[1] :> values[1];
     #endif
-	c_adc_samples <: values[1];
+	c_adc_samples <: bitrev(values[1]);
 	#endif
 
 	#if XPORTS_I2S__ADC_DATA_WIRE_COUNT >= 3
@@ -798,16 +798,16 @@ static inline void _xports_i2s__transfer_chan( xports_i2s__context_t& self, stre
     #else
 	self.pin_adc[2] :> values[2];
     #endif
-	c_adc_samples <: values[2];
+	c_adc_samples <: bitrev(values[2]);
 	#endif
 
 	#if XPORTS_I2S__ADC_DATA_WIRE_COUNT >= 4
-#if XPORTS_I2S__DATA_LOOPBACK_MODE == XPORTS_I2S__DATA_LOOPBACK_MODE__ON
-self.pin_adc[3] :> void;
-#else
-self.pin_adc[3] :> values[3];
-#endif
-c_adc_samples <: values[3];
+    #if XPORTS_I2S__DATA_LOOPBACK_MODE == XPORTS_I2S__DATA_LOOPBACK_MODE__ON
+    self.pin_adc[3] :> void;
+    #else
+    self.pin_adc[3] :> values[3];
+    #endif
+    c_adc_samples <: bitrev(values[3]);
 	#endif
 
 	#if XPORTS_I2S__BUS_CLOCKING_MODE == XPORTS_I2S__BUS_CLOCKING_MODE__MASTER
