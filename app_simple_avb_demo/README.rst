@@ -32,7 +32,7 @@ Test/Demo Instructions:
 ***********************
    - The demo shows: 
        * XMOS EP enumerated on Mac Maverics as: XMOS AVB Endpoint 16 in / 16 out
-       * 2 x 8 channel TDM loopback
+       * 2 x 8 channel TDM audio loopback
    - For TDM loopback modify the XMOS AVB Endpoint like this: 
        * Using Jumper Wires, connect SDATA_OUT0 to SDATA_IN0 and SDATA_OUT1 to SDATA_IN1
        * Remove jumper J12 to disconnect ADC from SDATA_IN0
