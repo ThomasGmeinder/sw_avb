@@ -23,8 +23,9 @@
  *  by getting a subset of samples for each sub-slot
  */
 
-
+#ifdef TDM_WIRE_LOOPBACK
 int channel_lut[16] = {6,7,0,1,2,3,4,5,14,15,8,9,10,11,12,13};
+#endif
 
 void media_input_output_fifo_support_upto_16ch(streaming chanend samples_out,
 			streaming chanend c_samples_from_adc,
@@ -42,6 +43,7 @@ void media_input_output_fifo_support_upto_16ch(streaming chanend samples_out,
  		 // channels 0..AVB_AUDIO_IF_SAMPLES_PER_PERIOD on sdata_out[0],
  		 // channels AVB_AUDIO_IF_SAMPLES_PER_PERIOD..(2*AVB_AUDIO_IF_SAMPLES_PER_PERIOD-1) on sdata_out[1]
  		 // etc, etc
+ 		 // The same assignment on in
 #pragma loop unroll
  		 for (int i=0;i<AVB_AUDIO_IF_SAMPLES_PER_PERIOD;i++) {
 		     unsigned sample;
@@ -58,8 +60,10 @@ void media_input_output_fifo_support_upto_16ch(streaming chanend samples_out,
  				c_samples_from_adc :> sample;
 
  				int ififo_idx = (i+j*AVB_AUDIO_IF_SAMPLES_PER_PERIOD);
-                //hack: compensate for issue in TDM interface that causes shift in input channel offset ((Bug 1481)
+#ifdef TDM_WIRE_LOOPBACK
+                // Wire loopback requires rotation of the input channel alignment (there is an implicit 32 bit delay due to the shiftreg)
  				ififo_idx = channel_lut[ififo_idx];
+#endif
  				if(ififo_idx == 0) {
                     //xscope_int(1, sext(24,sample));
  				}
