@@ -186,8 +186,9 @@ static void _xports_i2s__resync( xports_i2s__context_t& self )
 			for( int i = 0; i < XPORTS_I2S__DAC_DATA_WIRE_COUNT; ++i ) self.pin_dac[i] @ 16 <: 0xFFFFFFFF;
 			#endif
 			//self.pin_wclk @ 16 <: 0xFFFFFFFF;
-			self.pin_wclk <: 0xFFFFFFFF;
-			#if XPORTS_I2S__DATA_LOOPBACK_MODE == XPORTS_I2S__DATA_LOOPBACK_MODE__OFF && XPORTS_I2S__ADC_DATA_WIRE_COUNT > 0
+			//self.pin_wclk <: 0xFFFFFFFF;
+            self.pin_wclk @ 24 <: 0xFFFFFFFF; // customer got wclk synced with data usign 24
+            #if XPORTS_I2S__DATA_LOOPBACK_MODE == XPORTS_I2S__DATA_LOOPBACK_MODE__OFF && XPORTS_I2S__ADC_DATA_WIRE_COUNT > 0
 			#pragma loop unroll
 			for( int i = 0; i < XPORTS_I2S__ADC_DATA_WIRE_COUNT; ++i ) asm("setpt res[%0], %1"::"r"(self.pin_adc[i]),"r"(15));
 			#endif
