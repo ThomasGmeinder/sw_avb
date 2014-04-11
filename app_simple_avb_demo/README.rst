@@ -59,5 +59,4 @@ Known issues:
    - 1t1s16ch_1l1s16ch_TDM only works when the min delay of sending a Talker packet is reduced slightly. See Bug 14812
    - Between two XMOS EPs: 1t8s16ch_1l8s16ch_TDM looses lock when the 8th stream is connected. See Bug 14811
    - On the MAC: Any config wtih > 1 Stream per EP doesn’t work because of a 1722.1 descriptor issue. See Bug 14679
-   - When looping back the stereo channel over audacity on the MAC, the received stereo channel index is not continuous. See Bug 14813 
-
+  
