@@ -15,7 +15,6 @@
 #include <xscope.h>
 #include <xports-i2s.h>
 
-#define AVB_SINGLE_CORE_FIFO_SUPPORT 1
 
 #define AVB_AUDIO_IF_SW_LOOPBACK 0
 #define LLVM_COMPILER_UNROLL_WORKAROUND 1
@@ -105,11 +104,7 @@ static inline void tdm_master_multi_upto_32(
         int num_chan_in,
         int master_to_word_clock_ratio,
         streaming chanend ?c_samples_to_dac,
-#if XSTREAME_SHARED_MEM_IF
-        chanend ?c_sync,
-#else
         streaming chanend ?c_samples_from_adc,
-#endif
         media_input_fifo_t ?input_fifos[])  // Both in and out
 {
     unsigned timestamp;
@@ -120,77 +115,18 @@ static inline void tdm_master_multi_upto_32(
     unsigned check_active=0;
 #endif
 
-#if XSTREAME_SHARED_MEM_IF
-    unsigned dac_buffer[AVB_NUM_MEDIA_OUTPUTS];
-    unsigned adc_buffer[2][AVB_NUM_MEDIA_INPUTS]; // double_buffer
-
-	unsigned int dac_buffer_address;
-	unsigned int adc_buffer_address[2]; //double buffer
-	unsigned int adc_buffer_idx = 0;  //
-
-	// init pointers
-	asm("mov %0, %1":"=r"(dac_buffer_address):"r"(dac_buffer));
-	asm("mov %0, %1":"=r"(adc_buffer_address[0]):"r"(adc_buffer[0]));
-	asm("mov %0, %1":"=r"(adc_buffer_address[1]):"r"(adc_buffer[1]));
-#endif
-
-
 	xports_i2s__initialize(audio_if);
 
-#if 0 // not sure why this is needed
-    if(num_chan_out>0) {
-        c_samples_to_dac <: 0;
-        for (int n=0;n<num_chan_out;n++) {
-            int x;
-            c_samples_to_dac :> x;
-        }
-    }
-#endif
 
     while (1) {
         active_fifos = media_input_fifo_enable_req_state();
         tmr :> timestamp;
 
         //if(num_chan_out>0) {
-          c_samples_to_dac <: timestamp;
+        c_samples_to_dac <: timestamp;
 
-#if XSTREAME_SHARED_MEM_IF
-          // get all samples
-#pragma loop unroll
-#ifdef LLVM_COMPILER_UNROLL_WORKAROUND
-          for(int i=0; i<AVB_NUM_MEDIA_OUTPUTS; i++) {
-#else
-          for(int i=0; i<num_chan_out; i++) {
-#endif
-        		  c_samples_to_dac :> dac_buffer[i];
-          }
-#endif
-
-#if XSTREAME_SHARED_MEM_IF
-		xports_i2s__transfer(audio_if, dac_buffer_address, adc_buffer_address[adc_buffer_idx]);
-#else
-#if !AVB_SINGLE_CORE_FIFO_SUPPORT
-		c_samples_from_adc <: timestamp; //signal next block of samples
-#endif
 		xports_i2s__transfer_chan(audio_if, c_samples_to_dac, c_samples_from_adc);
-#endif
 
-		// Notify the input fifo interface core.
-		// Send buffere address and timestamp
-#if XSTREAME_SHARED_MEM_IF
-		master {
-#if AVB_AUDIO_IF_SW_LOOPBACK
-		c_sync <: dac_buffer_address;
-#else
-		c_sync <: adc_buffer_address[adc_buffer_idx];
-#endif
-		c_sync <: timestamp;
-		};
-		// switch double buffer
-		adc_buffer_idx = 1-adc_buffer_idx;
-#endif
-
-		//simple_printf("Sample Period Finished at timestamp %d\n",timestamp);
         media_input_fifo_update_enable_ind_state(active_fifos, 0xFFFFFFFF);
     }
 }
@@ -224,30 +160,12 @@ static inline void tdm_master_multi(xports_i2s__context_t &audio_if,
 
   {
     streaming chan c_samples_to_dac;
-#if XSTREAME_SHARED_MEM_IF
-    chan c_sync;
-#else
+
     streaming chan c_samples_from_adc;
-#endif
+
     par {
-
-#if AVB_SINGLE_CORE_FIFO_SUPPORT
-    	media_input_output_fifo_support_upto_16ch(c_samples_to_dac, c_samples_from_adc,
+      media_input_output_fifo_support_upto_16ch(c_samples_to_dac, c_samples_from_adc,
     			output_fifos, input_fifos);
-#else
-      if (num_out > 0)
-      {
-    	  media_output_fifo_to_xc_channel(c_samples_to_dac,
-                                               output_fifos,
-                                               num_out);
-      }
-
-#if XSTREAME_SHARED_MEM_IF
-      media_input_fifo_stuffer(c_sync, input_fifos, num_in);
-#else
-      media_input_fifo_stuffer_chan(c_samples_from_adc, input_fifos, num_in);
-#endif
-#endif
 
       tdm_master_multi_upto_32(
     		  audio_if,
@@ -255,11 +173,7 @@ static inline void tdm_master_multi(xports_i2s__context_t &audio_if,
     		  num_in,
     		  master_to_word_clock_ratio,
     		  c_samples_to_dac,
-#if XSTREAME_SHARED_MEM_IF
-              c_sync,
-#else
               c_samples_from_adc,
-#endif
     		  null);
     }
   }
